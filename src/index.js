@@ -1,8 +1,8 @@
 /**
- * Step 7: Demonstrate nested object fields and
- * implement resolvers with ES6 classes
+ * Step 8: Express middleware; Async resolver
  *
- * Note #1: We use class method to resolve nested object
+ * #1: 1.1 Request param; 1.2 Middleware
+ * #2: Async resolver with Promise
  */
 const { buildSchema } = require('graphql');
 const graphqlHTTP = require('express-graphql');
@@ -27,6 +27,7 @@ const schema = buildSchema(`
 	}
 
 	type Query {
+		lang: String!,
 		getPost(id: ID!): Post,
 		getPosts(limit: Int): [Post],
 		getAuthor(id: ID!): Author,
@@ -50,19 +51,36 @@ class Post {
 
 	// This method to resolve complicated custom field type
 	author() {
-		return new Author(db.authors.find(element => (
-			this._authorId === element.id
-		)));
+		// #2: Simulate async DB request for Author
+		return new Promise((resolve) => {
+			setTimeout(() => {
+				let rawAuthor = db.authors.find(element => (
+					this._authorId === element.id
+				));
+
+				resolve(new Author(rawAuthor));
+			}, 200);
+		});
 	}
 }
 
 
 // The root provides a resolver function for each API endpoint
 const root = {
+	// #1: The request param in resolver
+	lang(args, request) {
+		return request.query.lang;
+	},
+
+	// #2: Async demo, simulate async request for Post
 	getPost({ id }) {
-		return new Post(
-			db.posts.find(element => (id === element.id))
-		);
+		return new Promise((resolve) => {
+			setTimeout(() => {
+				let rawPost = db.posts.find(element => (id === element.id));
+
+				resolve(new Post(rawPost));
+			}, 200);
+		});
 	},
 
 	getPosts({ limit }) {
@@ -86,6 +104,16 @@ const root = {
 
 
 let app = express();
+// apply middle ware
+app.use(function languageMiddleware(req, res, next) {
+	var lang = req.query.lang;
+	if (!lang) {
+		console.log('No lang defined. Using default lang');
+		req.query.lang = 'vi';
+	}
+	next();
+});
+
 // define the API endpoint
 app.use('/graphql', graphqlHTTP({
 	schema,
@@ -98,17 +126,21 @@ console.log('Running a GraphQL API server at localhost:3000/graphql');
 
 /*
 Query to try in GraphiQL:
+#1. middleware request
 ```
 {
-  getPost(id: "03"){
-    id,
+  lang
+}
+```
+
+#2. async resolver
+```
+{
+  getPost(id: "01"){
     author {
-      id,
       firstName,
       lastName
-    },
-    content,
-    timestamp
+    }
   }
 }
 ```

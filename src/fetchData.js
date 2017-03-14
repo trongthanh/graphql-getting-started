@@ -3,7 +3,7 @@
  */
 /*eslint no-unused-vars:0*/
 
-function fetchData(query = '{ hello }', url = 'http://localhost:3000/graphql') {
+function fetchData(query = '{ hello }', variables = {}, url = 'http://localhost:3000/graphql') {
 	let requiredHeaders = new Headers({
 		'Content-Type': 'application/json',
 		'Accept': 'application/json',
@@ -12,7 +12,10 @@ function fetchData(query = '{ hello }', url = 'http://localhost:3000/graphql') {
 	let req = new Request(url, {
 		method: 'POST',
 		headers: requiredHeaders,
-		body: JSON.stringify({ query })
+		body: JSON.stringify({
+			query,     // note: query is a string
+			variables, // note: variables is an object
+		})
 	});
 
 	// return a promise which resolves with a json result object

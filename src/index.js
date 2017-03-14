@@ -1,6 +1,7 @@
 /**
- * Step 3: Implement query parameters, passing arguments to resolver
+ * Step 4: Adding placeholders to query, leaving query as literal string
  *
+ * Note #1: Only changed the destructuring assignment here
  */
 const { buildSchema } = require('graphql');
 const graphqlHTTP = require('express-graphql');
@@ -20,8 +21,7 @@ const root = {
 		return 'Hello world!';
 	},
 
-	echo(args) {
-		let name = args.name;
+	echo({ name }) { //#1
 		return `Hello ${name.toUpperCase()}. Greetings from GraphQL Server. Ahihi.`;
 	}
 };
@@ -40,18 +40,22 @@ console.log('Running a GraphQL API server at localhost:3000/graphql');
 /*
 Query to try in GraphiQL:
 ```
-{
-	echo(name: 'Hiếu')
+query Echo(name: String) {
+	echo(name: $name)
 }
 ```
 
 Browser's Fetch API demo
 ```
 // First declare the function fetchData() as in fetchData.js
-fetchData(`{
-	echo(name: "Hiếu")
-}`).then(json => {
-	console.log('Result:', JSON.stringify(json));
+fetchData(`
+query Echo($name: String!) {
+	echo(name: $name)
+}`, {
+	name: 'Hiếu'
+})
+.then(json => {
+	console.log('Response:', JSON.stringify(json));
 });
 
 ```

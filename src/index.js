@@ -1,8 +1,6 @@
 /**
- * Step 8: Express middleware; Async resolver
+ * Step 9: Mutation and input
  *
- * #1: 1.1 Request param; 1.2 Middleware
- * #2: Async resolver with Promise
  */
 const { buildSchema } = require('graphql');
 const graphqlHTTP = require('express-graphql');
@@ -33,6 +31,15 @@ const schema = buildSchema(`
 		getAuthor(id: ID!): Author,
 		getAuthors: [Author],
 	}
+
+	input PostInput {
+		author: ID!,
+		content: String!,
+	}
+
+	type Mutation {
+		createPost(input: PostInput): Post
+	}
 `);
 
 class Author {
@@ -51,7 +58,6 @@ class Post {
 
 	// This method to resolve complicated custom field type
 	author() {
-		// #2: Simulate async DB request for Author
 		return new Promise((resolve) => {
 			setTimeout(() => {
 				let rawAuthor = db.authors.find(element => (
@@ -64,15 +70,21 @@ class Post {
 	}
 }
 
+function createRawPost(input) {
+	return {
+		id: String(db.posts.length),
+		content: input.content,
+		author: input.author,
+		timestamp: Date.now(),
+	};
+}
 
 // The root provides a resolver function for each API endpoint
 const root = {
-	// #1: The request param in resolver
 	lang(args, request) {
 		return request.query.lang;
 	},
 
-	// #2: Async demo, simulate async request for Post
 	getPost({ id }) {
 		return new Promise((resolve) => {
 			setTimeout(() => {
@@ -99,7 +111,13 @@ const root = {
 
 	getAuthors() {
 		return db.authors.map(author => new Author(author));
-	}
+	},
+
+	createPost({ input }) {
+		let newPost = createRawPost(input);
+		db.posts.push(newPost);
+		return new Post(newPost);
+	},
 };
 
 
@@ -126,22 +144,30 @@ console.log('Running a GraphQL API server at localhost:3000/graphql');
 
 /*
 Query to try in GraphiQL:
-#1. middleware request
+#1. Without variables
 ```
-{
-  lang
-}
-```
-
-#2. async resolver
-```
-{
-  getPost(id: "01"){
-    author {
-      firstName,
-      lastName
-    }
+mutation {
+  createPost(input: {
+    author: "01",
+    content: "Hắn vừa đi vừa chửi. Bao giờ cũng thế, cứ rượu xong là hắn chửi. Bắt đầu hắn chửi trời. Có hề gì? Trời có của riêng nhà nào? Rồi hắn chửi đời. Thế cũng chẳng sao: đời là tất cả nhưng chẳng là ai. Tức mình, hắn chửi ngay tất cả làng Vũ Đại. Nhưng cả làng Vũ Đại ai cũng nhủ: “Chắc nó trừ mình ra!”."
+  }) {
+    id,
+    author
   }
 }
 ```
+#2. With variables
+mutation CreatePost($input: PostInput!) {
+  createPost(input: $input) {
+    id,
+    author
+  }
+}
+
+"variables": {
+  "input": {
+    "author": "02",
+    "content": "Hello Graph QL. Ahihi"
+  }
+}
 */

@@ -1,6 +1,6 @@
 /**
- * Step 2: Add express and express-graphql to allows previewing with GraphiQL
- * and test fetching from from browser
+ * Step 3: Implement query parameters, passing arguments to resolver
+ *
  */
 const { buildSchema } = require('graphql');
 const graphqlHTTP = require('express-graphql');
@@ -9,7 +9,8 @@ const express = require('express');
 // Construct a schema, using GraphQL schema language
 const schema = buildSchema(`
 	type Query {
-		hello: String
+		hello: String,
+		echo(name: String!): String,
 	}
 `);
 
@@ -18,6 +19,11 @@ const root = {
 	hello() {
 		return 'Hello world!';
 	},
+
+	echo(args) {
+		let name = args.name;
+		return `Hello ${name.toUpperCase()}. Greetings from GraphQL Server. Ahihi.`;
+	}
 };
 
 let app = express();
@@ -35,7 +41,18 @@ console.log('Running a GraphQL API server at localhost:3000/graphql');
 Query to try in GraphiQL:
 ```
 {
-	hello
+	echo(name: 'Hiếu')
 }
+```
+
+Browser's Fetch API demo
+```
+// First declare the function fetchData() as in fetchData.js
+fetchData(`{
+	echo(name: "Hiếu")
+}`).then(json => {
+	console.log('Result:', JSON.stringify(json));
+});
+
 ```
 */

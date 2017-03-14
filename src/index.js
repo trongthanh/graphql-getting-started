@@ -1,7 +1,10 @@
 /**
- * Step 1: Start simple GraphQL logic running inside NodeJS
+ * Step 2: Add express and express-graphql to allows previewing with GraphiQL
+ * and test fetching from from browser
  */
-const { graphql, buildSchema } = require('graphql');
+const { buildSchema } = require('graphql');
+const graphqlHTTP = require('express-graphql');
+const express = require('express');
 
 // Construct a schema, using GraphQL schema language
 const schema = buildSchema(`
@@ -17,7 +20,22 @@ const root = {
 	},
 };
 
-// Run the GraphQL query '{ hello }' and print out the response
-graphql(schema, '{ hello }', root).then((response) => {
-	console.log(response);
-});
+let app = express();
+// define the API endpoint
+app.use('/graphql', graphqlHTTP({
+	schema,
+	rootValue: root,
+	graphiql: true, // enable graphiql's query editor
+}));
+app.listen(3000);
+
+console.log('Running a GraphQL API server at localhost:3000/graphql');
+
+/*
+Query to try in GraphiQL:
+```
+{
+	hello
+}
+```
+*/
